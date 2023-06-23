@@ -1,6 +1,7 @@
 #include "theme.h"
 #include "ctemplate/template_dictionary.h"
 #include "ctemplate/template_enums.h"
+#include "processor.h"
 
 #include <chrono>
 #include <ctime>
@@ -9,6 +10,7 @@
 #include <string>
 
 #include <ctemplate/template.h>
+#include <vector>
 
 namespace yass {
 namespace fs = std::filesystem;
@@ -24,7 +26,9 @@ fs::path Theme::GetTemplatePath(const std::string page_type) const {
     return fs::path("themes") / fs::path(name) / fs::path(page_type + ".tmpl");
 }
 
-std::string Theme::Render(const Page *page) const {
+std::string Theme::Render(
+        Page *page,
+        const std::vector<PostSummary> post_summaries) const {
     fs::path path = GetTemplatePath(page->type);
     ctemplate::TemplateDictionary dict("page");
 
@@ -33,22 +37,25 @@ std::string Theme::Render(const Page *page) const {
     for (auto &nav_entry: site_config->navigation) {
         TemplateDictionary *nav_dict = dict.AddSectionDictionary("nav");
         nav_dict->SetValue("text", nav_entry.label);
-        nav_dict->SetValue("url", nav_entry.url);
+        nav_dict->SetValue("url", site_config->base_url + nav_entry.url);
     }
 
     std::time_t current_time = std::time(0);
     dict.SetValue("update_date", std::ctime(&current_time));
     dict.SetValue("content", page->content);
+    dict.SetValue("prev_url", site_config->base_url +  page->prev.path);
+    dict.SetValue("prev_label", page->prev.title);
+    dict.SetValue("next_url", site_config->base_url +  page->next.path);
+    dict.SetValue("next_label", page->next.title);
     for (auto &entry: page->metadata) {
         dict.SetValue(entry.first, entry.second);
     }
     if (page->type == "index") {
-        const IndexPage *index_page = static_cast<const IndexPage*>(page);
-        for (auto &summary: index_page->post_summaries) {
+        for (auto &summary: post_summaries) {
             TemplateDictionary *posts_dict = dict.AddSectionDictionary("posts");
             posts_dict->SetValue("date", summary.date);
             posts_dict->SetValue("title", summary.title);
-            posts_dict->SetValue("url", summary.path);
+            posts_dict->SetValue("url", site_config->base_url +  summary.path);
         }
     }
     std::string output;

@@ -6,30 +6,11 @@
 #include <string>
 #include <vector>
 
-namespace yass
-{
+#include "structs.h"
 
-struct PostSummary {
-    std::string path;
-    std::string title;
-    std::string date;
-};
- 
-struct Page {
-    std::string type;
-    std::map<std::string, std::string> metadata;
-    std::string content;
-};
+namespace yass {
 
-struct IndexPage : public Page {
-    std::vector<PostSummary> post_summaries;
-};
-
-class Parser
-{
-private:
-    
-
+class Parser {
 public:
     Parser() {};
     std::unique_ptr<Page> Parse(std::string &input);

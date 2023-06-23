@@ -15,7 +15,12 @@ std::shared_ptr<SiteConfig> ReadConfig(std::string_view config_path) {
         std::cerr << "Site Name is not available. I will die now." << std::endl;
         exit(1);
     }
+    if (!config["base_url"].is_string()) {
+        std::cerr << "Base URL is not available. I will die now." << std::endl;
+        exit(1);
+    }
     site_config->name = config["site_name"].as_string()->value_or("");
+    site_config->base_url = config["base_url"].as_string()->value_or("");
     std::string copyright_owner;
     if (!config["copyright_owner"].is_string()) {
         std::cerr << "Copyright Owner is not available." << std::endl;

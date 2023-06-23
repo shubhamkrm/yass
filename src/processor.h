@@ -6,11 +6,12 @@
 #include <vector>
 
 #include "parser.h"
+#include "structs.h"
 #include "theme.h"
 
 
 namespace yass {
-   
+  
 class Processor
 {
 private:

@@ -5,6 +5,7 @@
 #include <string>
 #include <utility>
 
+#include "structs.h"
 #include "tokenizer.h"
 #include "vendor/md4c/md4c-html.h"
 
@@ -67,12 +68,7 @@ std::string RDParser::content() {
 
 std::unique_ptr<Page> RDParser::page() {
     auto metadata = frontmatter();
-    std::unique_ptr<Page> page;
-    if (metadata["type"] == "index") {
-        page = std::make_unique<IndexPage>();
-    } else {
-        page = std::make_unique<Page>();
-    }
+    std::unique_ptr<Page> page = std::make_unique<Page>();
     page->content = content();
     page->type = metadata["type"];
     page->metadata = std::move(metadata);

@@ -3,6 +3,7 @@
 #include <fstream>
 #include <iostream>
 #include <filesystem>
+#include <iterator>
 #include <memory>
 #include <sstream>
 #include <string>
@@ -12,10 +13,15 @@
 namespace yass
 {
 namespace fs = std::filesystem;
-constexpr std::string_view kContentDir = "./content/";
-constexpr std::string_view kOutDir = "./static/";
+const fs::path kContentDir = "./content/";
+const fs::path kOutDir = "./static/";
 
 namespace {
+
+fs::path GetHtmlPath(fs::path md_path) {
+    return md_path.parent_path() / (md_path.stem().string()+".html");
+}
+
 std::string ReadFile(const fs::path path) {
     std::ifstream in(path); 
     std::ostringstream sstr;
@@ -39,18 +45,26 @@ void Processor::ProcessAssets(std::vector<fs::path> assets) {
 }
 
 void Processor::ProcessPosts(std::vector<fs::path> posts) {
-    for (auto &post : posts) {
-        std::string raw_post = ReadFile(kContentDir/post);
-        std::unique_ptr<Page> page = parser.Parse(raw_post);
-        std::string processed_post = theme.Render(page.get());
-        fs::path out_path = kOutDir/post.replace_extension(".html");
-        WriteFile(out_path, processed_post);
-        std::cout << out_path << std::endl;
-        
+    std::vector<std::unique_ptr<Page>> pages;
+    pages.reserve(posts.size());
+    for (auto &post: posts) {
+        std::string raw_post = ReadFile(kContentDir/(post));
+        auto page = parser.Parse(raw_post);
+        page->path = GetHtmlPath(post);
+        pages.push_back(std::move(page));
+    }
+    for (size_t i = 0; i < pages.size(); i++) {
+        pages[i]->prev = i > 0 ?  pages[i - 1]->GetPostSummary() : PostSummary();
+        pages[i]->next = i < pages.size() - 1 ? pages[i + 1]->GetPostSummary()
+            : PostSummary();
+        std::string processed_post = theme.Render(pages[i].get());
+        WriteFile(kOutDir/pages[i]->path, processed_post);
+        std::cout << kOutDir/pages[i]->path << std::endl;
+
         processed_posts_.push_back({
-                .path = post,
-                .title = page->metadata["title"],
-                .date = page->metadata["date"]
+                .path =  pages[i]->path,
+                .title = pages[i]->metadata["title"],
+                .date =  pages[i]->metadata["date"]
                 });
     }
 }
@@ -58,18 +72,11 @@ void Processor::ProcessPosts(std::vector<fs::path> posts) {
 void Processor::ProcessPages(std::vector<fs::path> pages) {
     for (auto &page_path : pages) {
         std::string raw_post = ReadFile(kContentDir/page_path);
-        std::unique_ptr<Page> page = parser.Parse(raw_post);
-        IndexPage *index_page = static_cast<IndexPage*>(page.get());
-        std::string processed_post;
-        if (index_page == nullptr) {
-            processed_post = theme.Render(page.get());
-        } else {
-            index_page->post_summaries = processed_posts_;
-            processed_post = theme.Render(index_page);
-        }
-        fs::path out_path = kOutDir/page_path.replace_extension(".html");
-        WriteFile(out_path, processed_post);
-        std::cout << out_path << std::endl;
+        auto page = parser.Parse(raw_post);
+        page->path = GetHtmlPath(page_path);
+        std::string processed_post = theme.Render(page.get(), processed_posts_);
+        WriteFile(kOutDir/page->path, processed_post);
+        std::cout << kOutDir/page->path << std::endl;
     }
 }
 

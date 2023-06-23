@@ -14,6 +14,7 @@ struct Navigation {
 
 struct SiteConfig {
     std::string name;
+    std::string base_url;
     std::string copyright_owner;
     std::vector<Navigation> navigation;
 };

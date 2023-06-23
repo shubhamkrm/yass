@@ -7,6 +7,7 @@
 
 #include "config.h"
 #include "parser.h"
+#include "structs.h"
 
 namespace yass {
     
@@ -19,8 +20,9 @@ private:
 public:
     Theme(std::string_view name, std::shared_ptr<SiteConfig> site_config);
     std::filesystem::path GetTemplatePath(std::string page_type) const;
-    std::string Render(const Page *page) const;
-    virtual ~Theme() {};
+    std::string Render(Page *page,
+            const std::vector<PostSummary> post_summaries = {}) const;
+    ~Theme() {};
 };
 
 } /* yass  */ 
