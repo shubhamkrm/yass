@@ -41,9 +41,9 @@ private:
  * 3: No internationalization support.
  */
 StateMachineTokenizer::StateMachineTokenizer() {
-    states[0].transition = [=](char ch, TokenList &tokens) {
+    states[0].transition = [this](char ch, TokenList &tokens) {
         Token &token = tokens.back();
-        tokens.back().type = TokenType::kFMDelimiter;
+        token.type = TokenType::kFMDelimiter;
         if (ch == '-') return states[0];
         if (ch == '\n') {
             tokens.emplace_back();
@@ -53,7 +53,7 @@ StateMachineTokenizer::StateMachineTokenizer() {
         exit(1);
     };
 
-    states[1].transition = [=](char ch, TokenList &tokens) {
+    states[1].transition = [this](char ch, TokenList &tokens) {
         Token &token = tokens.back();
         token.type = TokenType::kFMKey;
         if (isspace(ch)) return states[1];
@@ -67,7 +67,7 @@ StateMachineTokenizer::StateMachineTokenizer() {
         exit(1);
     };
 
-    states[2].transition = [=](char ch, TokenList &tokens) {
+    states[2].transition = [this](char ch, TokenList &tokens) {
         Token &token = tokens.back();
         token.type = TokenType::kFMKey;
         if (isalnum(ch)) {
@@ -87,7 +87,7 @@ StateMachineTokenizer::StateMachineTokenizer() {
         exit(1);
     };
 
-    states[3].transition = [=](char ch, TokenList &tokens) {
+    states[3].transition = [this](char ch, TokenList &tokens) {
         Token &token = tokens.back();
         token.type = TokenType::kFMKey;
         if (isspace(ch)) return states[3];
@@ -102,7 +102,7 @@ StateMachineTokenizer::StateMachineTokenizer() {
         exit(1);
     };
 
-    states[4].transition = [=](char ch, TokenList &tokens) {
+    states[4].transition = [this](char ch, TokenList &tokens) {
         Token &token = tokens.back();
         token.type = TokenType::kFMValue;
         if (isspace(ch)) return states[4];
@@ -113,7 +113,7 @@ StateMachineTokenizer::StateMachineTokenizer() {
         std::cerr << "Last parsed token : " << tokens.back().content << '\n';
         exit(1);
     };
-    states[5].transition = [=](char ch, TokenList &tokens) {
+    states[5].transition = [this](char ch, TokenList &tokens) {
         Token &token = tokens.back();
         token.type = TokenType::kFMValue;
         if (ch == '"') {
@@ -123,7 +123,7 @@ StateMachineTokenizer::StateMachineTokenizer() {
         token.content += ch;
         return states[5];
     };
-    states[6].transition = [=](char ch, TokenList &tokens) {
+    states[6].transition = [this](char ch, TokenList &tokens) {
         if (ch == ' ') return states[6];
         if (ch == '\n') return states[7];
         std::cerr << "Error parsing frontmatter:"
@@ -131,7 +131,7 @@ StateMachineTokenizer::StateMachineTokenizer() {
         std::cerr << "Last parsed token : " << tokens.back().content << '\n';
         exit(1);
     };
-    states[7].transition = [=](char ch, TokenList &tokens) {
+    states[7].transition = [this](char ch, TokenList &tokens) {
         Token &token = tokens.back();
         if (ch == '-') {
             token.type = TokenType::kFMDelimiter;
@@ -150,7 +150,7 @@ StateMachineTokenizer::StateMachineTokenizer() {
         std::cerr << "Last parsed token : " << tokens.back().content << '\n';
         exit(1);
     };
-    states[8].transition = [=](char ch, TokenList &tokens) {
+    states[8].transition = [this](char ch, TokenList &tokens) {
         if (ch == '-') return states[8];
         if (ch == '\n') {
             tokens.emplace_back();
@@ -161,7 +161,7 @@ StateMachineTokenizer::StateMachineTokenizer() {
         std::cerr << "Last parsed token : " << tokens.back().content << '\n';
         exit(1);
     };
-    states[9].transition = [=](char ch, TokenList &tokens) {
+    states[9].transition = [this](char ch, TokenList &tokens) {
         Token &token = tokens.back();
         token.type = TokenType::kContent;
         token.content += ch;
