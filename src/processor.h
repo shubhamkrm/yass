@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 
+#include "atom.h"
 #include "parser.h"
 #include "structs.h"
 #include "theme.h"
@@ -18,12 +19,14 @@ private:
     std::vector<PostSummary> processed_posts_;
     Parser parser;
     Theme theme;
+    Atom atom;
 
     void ProcessAssets(std::vector<std::filesystem::path> assets);
     void ProcessPages(std::vector<std::filesystem::path> pages);
     void ProcessPosts(std::vector<std::filesystem::path> posts);
 public:
-    Processor(Parser &parser, Theme &theme) : parser(parser), theme(theme) {}
+    Processor(Parser &parser, Theme &theme, Atom &atom) :
+        parser(parser), theme(theme), atom(atom) {}
     void ProcessContent();
     virtual ~Processor() {}
 };

@@ -34,6 +34,13 @@ void WriteFile(const fs::path path, const std::string content) {
     out << content;
 }
 
+time_t ParseDate(std::string date_string) {
+    std::tm tm = {};
+    std::stringstream ss(date_string);
+    ss >> std::get_time(&tm, "%Y-%m-%d");
+    return std::mktime(&tm);
+}
+
 } // namespace
  
 void Processor::ProcessAssets(std::vector<fs::path> assets) {
@@ -57,14 +64,26 @@ void Processor::ProcessPosts(std::vector<fs::path> posts) {
         pages[i]->prev = i > 0 ?  pages[i - 1]->GetPostSummary() : PostSummary();
         pages[i]->next = i < pages.size() - 1 ? pages[i + 1]->GetPostSummary()
             : PostSummary();
+        auto &metadata = pages[i]->metadata;
+        if (!metadata.contains("update_date")) {
+            metadata["update_date"] = metadata["date"];
+        }
+        
         std::string processed_post = theme.Render(pages[i].get());
         WriteFile(kOutDir/pages[i]->path, processed_post);
         std::cout << kOutDir/pages[i]->path << std::endl;
 
+        atom.AddEntry({
+                .title = metadata["title"],
+                .url = pages[i]->path,
+                .published_time = ParseDate(metadata["date"]),
+                .update_time = ParseDate(metadata["update_date"]),
+                .content = pages[i]->content
+                });
         processed_posts_.push_back({
                 .path =  pages[i]->path,
-                .title = pages[i]->metadata["title"],
-                .date =  pages[i]->metadata["date"]
+                .title = metadata["title"],
+                .date =  metadata["date"]
                 });
     }
 }
@@ -108,6 +127,7 @@ void Processor::ProcessContent()  {
     ProcessAssets(assets);
     ProcessPosts(posts);
     ProcessPages(pages);
+    atom.Write(kOutDir);
 
     std::string theme_path = theme.GetTemplatePath("post").parent_path();
     for (const fs::directory_entry& dir_entry:
