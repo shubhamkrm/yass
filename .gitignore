@@ -1,8 +1,9 @@
-*/.deps/*
 .ycm_extra_conf.py
 *.o
 *.swp
+.deps/
 Makefile.in
+Makefile
 aclocal.m4
 autom4te.cache/
 compile
