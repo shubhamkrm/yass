@@ -14,6 +14,12 @@ struct PostSummary {
     std::string title;
     std::string date;
 };
+
+struct PostSummaryCmp {
+    bool operator()(const PostSummary& lhs, const PostSummary& rhs) const {
+        return lhs.date > rhs.date;
+    }
+};
     
 struct Page {
     std::string type;

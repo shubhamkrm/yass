@@ -3,6 +3,7 @@
 
 #include <filesystem>
 #include <memory>
+#include <set>
 #include <string>
 
 #include "config.h"
@@ -20,8 +21,10 @@ private:
 public:
     Theme(std::string_view name, std::shared_ptr<SiteConfig> site_config);
     std::filesystem::path GetTemplatePath(std::string page_type) const;
-    std::string Render(Page *page,
-            const std::vector<PostSummary> post_summaries = {}) const;
+    std::string Render(
+            Page *page,
+            const std::set<PostSummary, PostSummaryCmp> post_summaries = {}
+        ) const;
     ~Theme() {};
 };
 

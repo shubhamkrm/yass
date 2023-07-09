@@ -85,7 +85,7 @@ void Processor::ProcessPosts(std::vector<fs::path> posts) {
                 .update_time = ParseDate(metadata["update_date"]),
                 .content = pages[i]->content
                 });
-        processed_posts_.push_back({
+        processed_posts_.insert({
                 .path =  pages[i]->path,
                 .title = metadata["title"],
                 .date =  metadata["date"]

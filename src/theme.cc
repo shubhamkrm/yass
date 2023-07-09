@@ -1,16 +1,14 @@
 #include "theme.h"
-#include "ctemplate/template_dictionary.h"
-#include "ctemplate/template_enums.h"
 #include "processor.h"
 
 #include <chrono>
 #include <ctime>
 #include <filesystem>
 #include <iostream>
+#include <set>
 #include <string>
 
 #include <ctemplate/template.h>
-#include <vector>
 
 namespace yass {
 namespace fs = std::filesystem;
@@ -28,7 +26,7 @@ fs::path Theme::GetTemplatePath(const std::string page_type) const {
 
 std::string Theme::Render(
         Page *page,
-        const std::vector<PostSummary> post_summaries) const {
+        const std::set<PostSummary, PostSummaryCmp> post_summaries) const {
     fs::path path = GetTemplatePath(page->type);
     ctemplate::TemplateDictionary dict("page");
 

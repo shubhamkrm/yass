@@ -3,7 +3,7 @@
 
 #include <filesystem>
 #include <string>
-#include <vector>
+#include <set>
 
 #include "atom.h"
 #include "parser.h"
@@ -16,7 +16,7 @@ namespace yass {
 class Processor
 {
 private:
-    std::vector<PostSummary> processed_posts_;
+    std::set<PostSummary, PostSummaryCmp> processed_posts_;
     Parser parser;
     Theme theme;
     Atom atom;
