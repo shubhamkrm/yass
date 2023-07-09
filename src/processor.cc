@@ -18,8 +18,12 @@ const fs::path kOutDir = "./static/";
 
 namespace {
 
-fs::path GetHtmlPath(fs::path md_path) {
-    return md_path.parent_path() / (md_path.stem().string()+".html");
+fs::path GetRelativePath(fs::path md_path) {
+    return md_path.parent_path() / md_path.stem();
+}
+
+fs::path GetHtmlPath(fs::path relative_path) {
+    return relative_path.replace_extension("html");
 }
 
 std::string ReadFile(const fs::path path) {
@@ -29,7 +33,7 @@ std::string ReadFile(const fs::path path) {
     return sstr.str();
 } 
 
-void WriteFile(const fs::path path, const std::string content) {
+void WriteFile(const fs::path path, const std::string &content) {
     std::ofstream out(path);
     out << content;
 }
@@ -57,7 +61,7 @@ void Processor::ProcessPosts(std::vector<fs::path> posts) {
     for (auto &post: posts) {
         std::string raw_post = ReadFile(kContentDir/(post));
         auto page = parser.Parse(raw_post);
-        page->path = GetHtmlPath(post);
+        page->path = GetRelativePath(post);
         pages.push_back(std::move(page));
     }
     for (size_t i = 0; i < pages.size(); i++) {
@@ -70,8 +74,9 @@ void Processor::ProcessPosts(std::vector<fs::path> posts) {
         }
         
         std::string processed_post = theme.Render(pages[i].get());
-        WriteFile(kOutDir/pages[i]->path, processed_post);
-        std::cout << kOutDir/pages[i]->path << std::endl;
+        fs::path out_path = kOutDir/GetHtmlPath(pages[i]->path);
+        WriteFile(out_path, processed_post);
+        std::cout << out_path << std::endl;
 
         atom.AddEntry({
                 .title = metadata["title"],
@@ -92,10 +97,11 @@ void Processor::ProcessPages(std::vector<fs::path> pages) {
     for (auto &page_path : pages) {
         std::string raw_post = ReadFile(kContentDir/page_path);
         auto page = parser.Parse(raw_post);
-        page->path = GetHtmlPath(page_path);
+        page->path = GetRelativePath(page_path);
         std::string processed_post = theme.Render(page.get(), processed_posts_);
-        WriteFile(kOutDir/page->path, processed_post);
-        std::cout << kOutDir/page->path << std::endl;
+        fs::path out_path = kOutDir/GetHtmlPath(page->path);
+        WriteFile(out_path, processed_post);
+        std::cout << out_path << std::endl;
     }
 }
 
