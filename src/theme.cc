@@ -41,10 +41,18 @@ std::string Theme::Render(
     std::time_t current_time = std::time(0);
     dict.SetValue("update_date", std::ctime(&current_time));
     dict.SetValue("content", page->content);
+    dict.SetValue("url", site_config->base_url + page->path.string());
+
     dict.SetValue("prev_url", site_config->base_url +  page->prev.path);
     dict.SetValue("prev_label", page->prev.title);
+    if (!page->prev.path.empty() && !page->prev.title.empty()) {
+        dict.ShowSection("prev_post");
+    }
     dict.SetValue("next_url", site_config->base_url +  page->next.path);
     dict.SetValue("next_label", page->next.title);
+    if (!page->next.path.empty() && !page->next.title.empty()) {
+        dict.ShowSection("next_post");
+    }
     for (auto &entry: page->metadata) {
         dict.SetValue(entry.first, entry.second);
     }
