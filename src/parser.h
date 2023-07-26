@@ -14,7 +14,7 @@ class Parser {
 public:
     Parser() {};
     std::unique_ptr<Page> Parse(std::string &input);
-    virtual ~Parser() {};
+    ~Parser() {};
 };
 
 } /* yass */ 

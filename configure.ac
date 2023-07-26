@@ -8,5 +8,6 @@ AC_SEARCH_LIBS(ctemplate_nothreads)
 AC_CONFIG_FILES([
  Makefile
  src/Makefile
+ tst/Makefile
 ])
 AC_OUTPUT

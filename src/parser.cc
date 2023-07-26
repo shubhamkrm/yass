@@ -17,7 +17,7 @@ class RDParser
 public:
     RDParser (TokenList tokens) : index(0), tokens(tokens) {}
     std::unique_ptr<Page> Parse();
-    virtual ~RDParser () {};
+    ~RDParser () {};
 
 private:
     /* data */
@@ -46,16 +46,17 @@ std::string RDParser::expect(TokenType type) {
 }
 
 std::pair<std::string, std::string> RDParser::keyval() {
-    std::string key = expect(TokenType::kFMKey);
+    std::string key = expect(TokenType::kFMWord);
     expect(TokenType::kFMSeparator);
-    std::string val = expect(TokenType::kFMValue);
+    std::string val = expect(TokenType::kFMWord);
+    expect(TokenType::kNewLine);
     return {key, val};
 }
 
 std::map<std::string, std::string> RDParser::frontmatter() {
     expect(TokenType::kFMDelimiter);
     std::map<std::string, std::string> frontmatter;
-    while (tokens.at(index).type == TokenType::kFMKey) {
+    while (tokens.at(index).type == TokenType::kFMWord) {
         frontmatter.insert(keyval());
     }
     expect(TokenType::kFMDelimiter);
@@ -86,12 +87,12 @@ void process_output(const MD_CHAR* text, MD_SIZE size, void *data) {
 } /* namespace */
 /*
  * Grammar:
- * page = frontmatter content
- * frontmatter = delimiter {keyval} delimiter
- * keyval = key ":" val
+ * page = {frontmatter} content
+ * frontmatter = delimiter {entries} delimiter
+ * entries = word ":" word "\n"
  */
-std::unique_ptr<Page>  Parser::Parse(std::string &input) {
-    TokenList tokens = Tokenize(input);
+std::unique_ptr<Page> Parser::Parse(std::string &input) {
+    TokenList tokens = Tokenizer2(input).Tokenize();
     RDParser parser(tokens);
     std::unique_ptr<Page> page = parser.Parse();
     auto markdown_content = std::make_unique<std::string>();

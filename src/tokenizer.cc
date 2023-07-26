@@ -1,189 +1,130 @@
+#include <iostream>
+#include <string_view>
+
 #include "tokenizer.h"
 
-#include <ctype.h>
-#include <cstdint>
-#include <functional>
-#include <iostream>
-#include <memory>
-#include <vector>
-
-namespace yass
-{
+namespace yass {
 namespace {
-
-class Tokenizer
-{
-public:
-    virtual TokenList Tokenize(const std::string&) const = 0;
-    virtual ~Tokenizer() {}
-};
-
-class StateMachineTokenizer : public Tokenizer
-{
-public:
-    struct State {
-        std::function<State(char, TokenList&)> transition;
-    }; 
-
-    StateMachineTokenizer ();
-    TokenList Tokenize(const std::string &input) const;
-    virtual ~StateMachineTokenizer () {}
-
-private:
-    State states[10];
-};
-
-/*
- * Some limitations:
- * 1. Any value cannot have a `"` char in it. TODO: Need to implement escaping.
- * 2. Tokenizer rejects the input if it does not start with the delimiter.
- *    This logic should be in the parser, tokenizer should be more permissive.
- * 3: No internationalization support.
- */
-StateMachineTokenizer::StateMachineTokenizer() {
-    states[0].transition = [this](char ch, TokenList &tokens) {
-        Token &token = tokens.back();
-        token.type = TokenType::kFMDelimiter;
-        if (ch == '-') return states[0];
-        if (ch == '\n') {
-            tokens.emplace_back();
-            return states[7];
-        }
-        std::cerr << "Parse Error: First line should be a delimiter.\n";
-        exit(1);
-    };
-
-    states[1].transition = [this](char ch, TokenList &tokens) {
-        Token &token = tokens.back();
-        token.type = TokenType::kFMKey;
-        if (isspace(ch)) return states[1];
-        if (isalnum(ch)) {
-            token.content += ch;
-            return states[2];
-        }
-        std::cerr << "Error parsing frontmatter." 
-            "Key can only contain alphanumeric values.\n";
-        std::cerr << "Last parsed token : " << tokens.back().content << '\n';
-        exit(1);
-    };
-
-    states[2].transition = [this](char ch, TokenList &tokens) {
-        Token &token = tokens.back();
-        token.type = TokenType::kFMKey;
-        if (isalnum(ch)) {
-            token.content += ch;
-            return states[2];
-        }
-        if (isspace(ch)) return states[3];
-        if (ch == ':') {
-            tokens.emplace_back();
-            tokens.back().type = TokenType::kFMSeparator;
-            tokens.emplace_back();
-            return states[4];
-        }
-        std::cerr << "Error parsing frontmatter." 
-            "Key can only contain alphanumeric values.\n";
-        std::cerr << "Last parsed token : " << tokens.back().content << '\n';
-        exit(1);
-    };
-
-    states[3].transition = [this](char ch, TokenList &tokens) {
-        Token &token = tokens.back();
-        token.type = TokenType::kFMKey;
-        if (isspace(ch)) return states[3];
-        if (ch == ':') {
-            tokens.emplace_back();
-            tokens.back().type = TokenType::kFMSeparator;
-            tokens.emplace_back();
-            return states[4];
-        }
-        std::cerr << "Error parsing frontmatter. Key cannot contain spaces.\n";
-        std::cerr << "Last parsed token : " << tokens.back().content << '\n';
-        exit(1);
-    };
-
-    states[4].transition = [this](char ch, TokenList &tokens) {
-        Token &token = tokens.back();
-        token.type = TokenType::kFMValue;
-        if (isspace(ch)) return states[4];
-        if (ch == '"') {
-            return states[5];
-        }
-        std::cerr << "Error parsing frontmatter: Did you forget a quote?\n";
-        std::cerr << "Last parsed token : " << tokens.back().content << '\n';
-        exit(1);
-    };
-    states[5].transition = [this](char ch, TokenList &tokens) {
-        Token &token = tokens.back();
-        token.type = TokenType::kFMValue;
-        if (ch == '"') {
-            tokens.emplace_back();
-            return states[6];
-        }
-        token.content += ch;
-        return states[5];
-    };
-    states[6].transition = [this](char ch, TokenList &tokens) {
-        if (ch == ' ') return states[6];
-        if (ch == '\n') return states[7];
-        std::cerr << "Error parsing frontmatter:"
-            "All keys should start at a new line.\n";
-        std::cerr << "Last parsed token : " << tokens.back().content << '\n';
-        exit(1);
-    };
-    states[7].transition = [this](char ch, TokenList &tokens) {
-        Token &token = tokens.back();
-        if (ch == '-') {
-            token.type = TokenType::kFMDelimiter;
-            return states[8];
-        }
-        if (isalnum(ch)) {
-            token.type = TokenType::kFMKey;
-            token.content += ch;
-            return states[1];
-        }
-        if (isspace(ch)) {
-            return states[1];
-        }
-        std::cerr << "Error parsing frontmatter." 
-            "Key can only contain alphanumeric values.\n";
-        std::cerr << "Last parsed token : " << tokens.back().content << '\n';
-        exit(1);
-    };
-    states[8].transition = [this](char ch, TokenList &tokens) {
-        if (ch == '-') return states[8];
-        if (ch == '\n') {
-            tokens.emplace_back();
-            return states[9];
-        }
-        std::cerr << "Error parsing frontmatter." 
-            "Key can only contain alphanumeric values.\n";
-        std::cerr << "Last parsed token : " << tokens.back().content << '\n';
-        exit(1);
-    };
-    states[9].transition = [this](char ch, TokenList &tokens) {
-        Token &token = tokens.back();
-        token.type = TokenType::kContent;
-        token.content += ch;
-        return states[9];
-    };
+void handleError(int line, std::string_view message) {
+  std::cerr << "Error on line " << line << ": " << message << std::endl;
 }
 
-TokenList StateMachineTokenizer::Tokenize(const std::string &input)
-    const {
-    TokenList tokens;
-    tokens.emplace_back();
-    State state = states[0];
-    for (char c: input) {
-        state = state.transition(c, tokens);
-    }
-    return tokens;
+bool isWordSeparator(char ch) { return isspace(ch) || ch == ',' || ch == ':'; }
+
+}  // namespace
+
+bool Tokenizer2::isAtEnd() const { return (current >= source.length()); }
+
+char Tokenizer2::advance() { return source.at(current++); }
+
+char Tokenizer2::peek() const {
+  if (isAtEnd()) return 0;
+  return source.at(current);
 }
 
-} /* namespace */
-
-TokenList Tokenize(std::string &input) {
-    auto tokenizer = std::make_unique<StateMachineTokenizer>();
-    return tokenizer->Tokenize(input);
+void Tokenizer2::addToken(const TokenType type,
+                          const std::string_view content = "") {
+  tokens.push_back(
+      {.type = type, .content = std::string(content), .line = line});
 }
-} /* yass */ 
+
+bool Tokenizer2::match(const char expected) {
+  if (isAtEnd() || (peek() != expected)) return false;
+  current++;
+  return true;
+}
+
+void Tokenizer2::content() {
+  addToken(TokenType::kContent, source.substr(start));
+  while (!isAtEnd()) {
+    if (peek() == '\n') line++;
+    advance();
+  }
+  current = source.length();
+}
+
+void Tokenizer2::delimiter() {
+  while (peek() == '-' && !isAtEnd()) {
+    advance();
+  }
+  if (peek() != '\n') {
+    handleError(
+        line, "Lines containing delimiters cannot contain any other character");
+  }
+  addToken(TokenType::kFMDelimiter);
+  // Consume new line.
+  advance();
+  line++;
+  num_delimiters++;
+  if (num_delimiters == 2) {
+    start = current;
+    content();
+  }
+}
+
+void Tokenizer2::quotedWord() {
+  while (peek() != '"' && !isAtEnd()) {
+    if (peek() == '\n') line++;
+    advance();
+  }
+  if (isAtEnd()) {
+    handleError(line, "Encountered end of file while parsing quoted word.");
+  }
+  // Need to consume the closing " as well.
+  advance();
+  addToken(TokenType::kFMWord, source.substr(start + 1, current - start - 2));
+}
+
+void Tokenizer2::word() {
+  while (!isWordSeparator(peek()) && !isAtEnd()) {
+    if (peek() == '\n') line++;
+    advance();
+  }
+  addToken(TokenType::kFMWord, source.substr(start, current - start));
+}
+
+void Tokenizer2::scanToken() {
+  char c = advance();
+  switch (c) {
+    case '-':
+      if (match('-') && match('-'))
+        delimiter();
+      else
+        word();
+      break;
+    case ',':
+      addToken(TokenType::kListSeparator);
+      break;
+    case ':':
+      addToken(TokenType::kFMSeparator);
+      break;
+    case '\n':
+      addToken(TokenType::kNewLine);
+      line++;
+      break;
+    case '"':
+      quotedWord();
+      break;
+    case ' ':
+    case '\f':
+    case '\r':
+    case '\t':
+    case '\v':
+      break;
+    default:
+      word();
+      break;
+  }
+}
+
+TokenList Tokenizer2::Tokenize() {
+  while (!isAtEnd()) {
+    start = current;
+    scanToken();
+  }
+
+  addToken(TokenType::kEof);
+  return tokens;
+}
+
+}  // namespace yass
