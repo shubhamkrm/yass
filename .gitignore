@@ -2,14 +2,6 @@
 *.o
 *.swp
 .deps/
-Makefile.in
 Makefile
-aclocal.m4
-autom4te.cache/
-compile
-configure
-config.log
-config.status
-depcomp
-install-sh
-missing
+example/
+build/

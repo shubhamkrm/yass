@@ -1,4 +1,4 @@
-#define BOOST_TEST_MODULE Tokenizer Test
+#define BOOST_TEST_MODULE Parser Test
 #include <boost/test/included/unit_test.hpp>
 #include "../src/parser.h"
 
