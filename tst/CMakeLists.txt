@@ -1,5 +1,3 @@
-cmake_minimum_required(VERSION 3.25)
-
 # Fetch googletest
 set(INSTALL_GTEST OFF)
 set(INSTALL_GMOCK OFF)

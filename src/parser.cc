@@ -58,14 +58,13 @@ std::pair<std::string, std::any> RDParser::keyval() {
   expect(TokenType::kFMSeparator);
 
   std::string string_val = expect(TokenType::kFMWord);
-  std::vector<std::string> list_val;
+  std::vector<std::string> list_val{string_val};
 
   while (accept(TokenType::kListSeparator)) {
-    expect(TokenType::kFMWord);
-    // list_val.push_back(expect(TokenType::kFMWord));
+    list_val.push_back(expect(TokenType::kFMWord));
   }
   expect(TokenType::kNewLine);
-  if (list_val.size() <= 1) {
+  if (list_val.size() == 1) {
     return {key, string_val};
   }
   return {key, list_val};
@@ -87,7 +86,14 @@ std::unique_ptr<Page> RDParser::page() {
   auto metadata = frontmatter();
   std::unique_ptr<Page> page = std::make_unique<Page>();
   page->content = content();
-  page->type = std::any_cast<std::string>(metadata["type"]);
+  if (metadata.find("type") != metadata.end()) {
+    if (metadata["type"].type() != typeid(std::string)) {
+      std::cerr << "Parse Error: 'type' should always be a string.\n";
+      exit(1);
+    } else {
+      page->type = std::any_cast<std::string>(metadata["type"]);
+    }
+  }
   page->metadata = std::move(metadata);
   return page;
 }

@@ -21,14 +21,11 @@ description: "It's a nice example"
   Parser parser;
   auto page = parser.Parse(input);
 
-  // Metadata key `type` is always present.
-  EXPECT_EQ(page->metadata.size(), 3);
+  EXPECT_EQ(page->metadata.size(), 2);
   EXPECT_EQ(page->content, "<h1>Hola!</h1>\n");
 
-  ASSERT_EQ(page->metadata["title"].type(),
-            std::type_index(typeid(std::string)));
-  ASSERT_EQ(page->metadata["description"].type(),
-            std::type_index(typeid(std::string)));
+  ASSERT_EQ(page->metadata["title"].type(), typeid(std::string));
+  ASSERT_EQ(page->metadata["description"].type(), typeid(std::string));
 
   std::string title = std::any_cast<std::string>(page->metadata["title"]);
   std::string description =
@@ -45,7 +42,7 @@ Hola!
 )input";
   Parser parser;
   auto page = parser.Parse(input);
-  EXPECT_EQ(page->metadata.size(), 1);
+  EXPECT_EQ(page->metadata.size(), 0);
   EXPECT_EQ(page->content, "<p>Hola!</p>\n");
 }
 
@@ -60,11 +57,11 @@ categories: cat1, cat2, cat3
   auto page = parser.Parse(input);
 
   // Metadata key `type` is always present.
-  EXPECT_EQ(page->metadata.size(), 2);
+  EXPECT_EQ(page->metadata.size(), 1);
   EXPECT_EQ(page->content, "<h1>Hola!</h1>\n");
 
   ASSERT_EQ(page->metadata["categories"].type(),
-            std::type_index(typeid(std::vector<std::string>)));
+            typeid(std::vector<std::string>));
 
   auto categories =
       std::any_cast<std::vector<std::string>>(page->metadata["categories"]);
