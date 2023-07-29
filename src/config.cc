@@ -4,7 +4,7 @@
 #include <memory>
 
 #define TOML_ENABLE_FORMATTERS 0
-#include "vendor/tomlplusplus/toml.hpp"
+#include <toml++/toml.h>
 
 
 namespace yass {

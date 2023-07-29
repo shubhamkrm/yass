@@ -8,11 +8,3 @@ add_subdirectory(src)
 enable_testing()
 add_subdirectory(tst)
 
-# Packaging for end-users
-include(InstallRequiredSystemLibraries)
-set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/License.txt")
-set(CPACK_PACKAGE_VERSION_MAJOR "${yass_VERSION_MAJOR}")
-set(CPACK_PACKAGE_VERSION_MINOR "${yass_VERSION_MINOR}")
-set(CPACK_SOURCE_GENERATOR "TGZ")
-include(CPack)
-
