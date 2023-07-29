@@ -78,17 +78,19 @@ void Processor::ProcessPosts(std::vector<fs::path> posts) {
         WriteFile(out_path, processed_post);
         std::cout << out_path << std::endl;
 
+        auto summary = pages[i]->GetPostSummary();
+        auto update_date = std::any_cast<std::string>(metadata["update_date"]);
         atom.AddEntry({
-                .title = metadata["title"],
+                .title = summary.title,
                 .url = pages[i]->path,
-                .published_time = ParseDate(metadata["date"]),
-                .update_time = ParseDate(metadata["update_date"]),
+                .published_time = ParseDate(summary.date),
+                .update_time = ParseDate(update_date),
                 .content = pages[i]->content
                 });
         processed_posts_.insert({
                 .path =  pages[i]->path,
-                .title = metadata["title"],
-                .date =  metadata["date"]
+                .title = summary.title,
+                .date =  summary.date,
                 });
     }
 }

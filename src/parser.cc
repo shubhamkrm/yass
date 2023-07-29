@@ -1,5 +1,6 @@
 #include "parser.h"
 
+#include <any>
 #include <iostream>
 #include <memory>
 #include <string>
@@ -26,12 +27,21 @@ private:
 
     /* internal methods */
     std::unique_ptr<Page> page();
-    std::map<std::string, std::string> frontmatter();
-    std::pair<std::string, std::string> keyval();
+    std::map<std::string, std::any> frontmatter();
+    std::pair<std::string, std::any> keyval();
     std::string content();
     std::string expect(TokenType);
+    bool accept(TokenType);
 };   
 
+bool RDParser::accept(TokenType type) {
+    Token &token = tokens.at(index);
+    if (token.type == type) {
+        index++;
+        return true;
+    }
+    return false;
+}
 
 std::string RDParser::expect(TokenType type) {
     Token &token = tokens.at(index);
@@ -45,17 +55,27 @@ std::string RDParser::expect(TokenType type) {
     exit(1);
 }
 
-std::pair<std::string, std::string> RDParser::keyval() {
+std::pair<std::string, std::any> RDParser::keyval() {
     std::string key = expect(TokenType::kFMWord);
     expect(TokenType::kFMSeparator);
-    std::string val = expect(TokenType::kFMWord);
+
+    std::string string_val = expect(TokenType::kFMWord);
+    std::vector<std::string> list_val;
+
+    while (accept(TokenType::kListSeparator)) {
+        expect(TokenType::kFMWord);
+        //list_val.push_back(expect(TokenType::kFMWord));
+    }
     expect(TokenType::kNewLine);
-    return {key, val};
+    if (list_val.size() <= 1) {
+        return {key, string_val};
+    }
+    return {key, list_val};
 }
 
-std::map<std::string, std::string> RDParser::frontmatter() {
+std::map<std::string, std::any> RDParser::frontmatter() {
     expect(TokenType::kFMDelimiter);
-    std::map<std::string, std::string> frontmatter;
+    std::map<std::string, std::any> frontmatter;
     while (tokens.at(index).type == TokenType::kFMWord) {
         frontmatter.insert(keyval());
     }
@@ -71,7 +91,7 @@ std::unique_ptr<Page> RDParser::page() {
     auto metadata = frontmatter();
     std::unique_ptr<Page> page = std::make_unique<Page>();
     page->content = content();
-    page->type = metadata["type"];
+    page->type = std::any_cast<std::string>(metadata["type"]);
     page->metadata = std::move(metadata);
     return page;
 }
@@ -89,7 +109,7 @@ void process_output(const MD_CHAR* text, MD_SIZE size, void *data) {
  * Grammar:
  * page = {frontmatter} content
  * frontmatter = delimiter {entries} delimiter
- * entries = word ":" word "\n"
+ * entries = word ":" value "\n"
  */
 std::unique_ptr<Page> Parser::Parse(std::string &input) {
     TokenList tokens = Tokenizer2(input).Tokenize();

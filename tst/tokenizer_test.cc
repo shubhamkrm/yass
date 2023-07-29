@@ -1,14 +1,13 @@
-#define BOOST_TEST_MODULE Tokenizer Test
-#include <boost/test/included/unit_test.hpp>
+#include <gtest/gtest.h>
+#include <gtest/gtest-matchers.h>
 #include <string>
 
 #include "../src/tokenizer.h"
 
 namespace yass {
-    
 namespace testing {
 
-BOOST_AUTO_TEST_CASE(happy_case_test) {
+TEST(TokenizerTest, SimpleTestCase) {
   std::string input = R"input(---
 title: "A fancy title"
 description: "It's a nice example"
@@ -18,10 +17,6 @@ Hola!
 )input";
   Tokenizer2 tokenizer(input);
   auto tokens = tokenizer.Tokenize();
-  for (auto &token : tokens) {
-    std::cout << token.type << " : " << token.content
-              << "; Line : " << token.line << std::endl;
-  }
 
   TokenList expected = {
       Token{TokenType::kFMDelimiter, "", 1},
@@ -38,11 +33,10 @@ Hola!
       Token{TokenType::kEof, "", 7},
   };
 
-  BOOST_CHECK_EQUAL_COLLECTIONS(tokens.begin(), tokens.end(),
-          expected.begin(), expected.end());
+  EXPECT_EQ(tokens, expected);
 }
 
-BOOST_AUTO_TEST_CASE(test_empty_frontmatter) {
+TEST(TokenizerTest, EmptyFrontmatter) {
   std::string input = R"input(---
 ---
 
@@ -55,9 +49,34 @@ Hola!
       Token{TokenType::kContent, "\nHola!\n", 3},
       Token{TokenType::kEof, "", 5},
   };
-
-
+  EXPECT_EQ(tokens, expected);
 }
 
-}  // namespace testing
+TEST(TokenizerTest, FrontmatterWithList) {
+  std::string input = R"input(---
+categories: cat1, cat2, cat3
+---
+
+Hola!
+)input";
+  yass::TokenList tokens = yass::Tokenizer2(input).Tokenize();
+  TokenList expected = {
+      Token{TokenType::kFMDelimiter, "", 1},
+      Token{TokenType::kFMWord, "categories", 2},
+      Token{TokenType::kFMSeparator, "", 2},
+      Token{TokenType::kFMWord, "cat1", 2},
+      Token{TokenType::kListSeparator, "", 2},
+      Token{TokenType::kFMWord, "cat2", 2},
+      Token{TokenType::kListSeparator, "", 2},
+      Token{TokenType::kFMWord, "cat3", 2},
+      Token{TokenType::kNewLine, "", 2},
+      Token{TokenType::kFMDelimiter, "", 3},
+      Token{TokenType::kContent, "\nHola!\n", 4},
+      Token{TokenType::kEof, "", 6},
+  };
+  EXPECT_EQ(tokens, expected);
+}
+
+} /*  testing */     
 } /* yass  */ 
+

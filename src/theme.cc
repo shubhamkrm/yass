@@ -54,7 +54,8 @@ std::string Theme::Render(
         dict.ShowSection("next_post");
     }
     for (auto &entry: page->metadata) {
-        dict.SetValue(entry.first, entry.second);
+        if (entry.second.type() == typeid(std::string))
+            dict.SetValue(entry.first, std::any_cast<std::string>(entry.second));
     }
     if (page->type == "index") {
         for (auto &summary: post_summaries) {

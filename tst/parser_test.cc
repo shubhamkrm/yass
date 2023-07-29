@@ -1,46 +1,75 @@
-#define BOOST_TEST_MODULE Parser Test
-#include <boost/test/included/unit_test.hpp>
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
+
+#include <any>
+#include <string>
+#include <typeindex>
+
 #include "../src/parser.h"
 
-#include <string>
+namespace yass {
+namespace {
 
-namespace testing {
-using ::yass::Page;
-using ::yass::Parser;
-
-BOOST_AUTO_TEST_CASE(happy_case_test)
-{
-    std::string input = R"input(---
+TEST(ParserTest, SimpleParserTest) {
+  std::string input = R"input(---
 title: "A fancy title"
 description: "It's a nice example"
 ---
 
 # Hola!
 )input";
-    Parser parser;
-    auto page = parser.Parse(input);
-    for (auto& entry : page->metadata) {
-        std::cout << entry.first << ": " << entry.second << "\n";
-    }
-    // Metadata key `type` is always present.
-    BOOST_TEST(page->metadata.size() == 3);
-    BOOST_TEST(page->metadata["title"] == "A fancy title");
-    BOOST_TEST(page->metadata["description"] == "It's a nice example");
-    BOOST_TEST(page->content == "<h1>Hola!</h1>\n");
+  Parser parser;
+  auto page = parser.Parse(input);
+
+  // Metadata key `type` is always present.
+  EXPECT_EQ(page->metadata.size(), 3);
+  EXPECT_EQ(page->content, "<h1>Hola!</h1>\n");
+
+  ASSERT_EQ(page->metadata["title"].type(),
+            std::type_index(typeid(std::string)));
+  ASSERT_EQ(page->metadata["description"].type(),
+            std::type_index(typeid(std::string)));
+
+  std::string title = std::any_cast<std::string>(page->metadata["title"]);
+  std::string description =
+      std::any_cast<std::string>(page->metadata["description"]);
+  EXPECT_EQ(title, "A fancy title");
+  EXPECT_EQ(description, "It's a nice example");
 }
 
-BOOST_AUTO_TEST_CASE(test_empty_frontmatter)
-{
-    std::string input = R"input(---
+TEST(ParserTest, EmptyFrontmatterTest) {
+  std::string input = R"input(---
 ---
 
 Hola!
 )input";
-    Parser parser;
-    auto page = parser.Parse(input);
-    BOOST_TEST(page->metadata.size() == 1);
-    BOOST_TEST(page->content == "<p>Hola!</p>\n");
+  Parser parser;
+  auto page = parser.Parse(input);
+  EXPECT_EQ(page->metadata.size(), 1);
+  EXPECT_EQ(page->content, "<p>Hola!</p>\n");
 }
 
+TEST(ParserTest, ParseListAttributes) {
+  std::string input = R"input(---
+categories: cat1, cat2, cat3
+---
 
-} /* testing */
+# Hola!
+)input";
+  Parser parser;
+  auto page = parser.Parse(input);
+
+  // Metadata key `type` is always present.
+  EXPECT_EQ(page->metadata.size(), 2);
+  EXPECT_EQ(page->content, "<h1>Hola!</h1>\n");
+
+  ASSERT_EQ(page->metadata["categories"].type(),
+            std::type_index(typeid(std::vector<std::string>)));
+
+  auto categories =
+      std::any_cast<std::vector<std::string>>(page->metadata["categories"]);
+  EXPECT_THAT(categories, ::testing::ElementsAre("cat1", "cat2", "cat3"));
+}
+
+}  // namespace
+}  // namespace yass

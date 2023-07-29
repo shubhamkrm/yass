@@ -1,6 +1,7 @@
 #ifndef STRUCTS_H
 #define STRUCTS_H 
 
+#include <any>
 #include <filesystem>
 #include <memory>
 #include <map>
@@ -23,7 +24,7 @@ struct PostSummaryCmp {
     
 struct Page {
     std::string type;
-    std::map<std::string, std::string> metadata;
+    std::map<std::string, std::any> metadata;
     std::string content;
     fs::path path;
     PostSummary prev;
@@ -32,8 +33,9 @@ struct Page {
     PostSummary GetPostSummary() {
         return {
             .path = path,
-            .title = metadata["title"],
-            .date = metadata["date"]
+                // TODO: Error checking
+            .title = std::any_cast<std::string>(metadata["title"]),
+            .date = std::any_cast<std::string>(metadata["date"]),
         };
     }
 };
