@@ -1,11 +1,12 @@
-#include <gtest/gtest.h>
 #include <gtest/gtest-matchers.h>
+#include <gtest/gtest.h>
+
 #include <string>
 
 #include "../src/tokenizer.h"
 
 namespace yass {
-namespace testing {
+namespace {
 
 TEST(TokenizerTest, SimpleTestCase) {
   std::string input = R"input(---
@@ -77,6 +78,5 @@ Hola!
   EXPECT_EQ(tokens, expected);
 }
 
-} /*  testing */     
-} /* yass  */ 
-
+}  // namespace 
+}  // namespace yass

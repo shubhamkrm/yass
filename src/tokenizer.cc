@@ -13,34 +13,34 @@ bool isWordSeparator(char ch) { return isspace(ch) || ch == ',' || ch == ':'; }
 
 }  // namespace
 
-bool Tokenizer2::isAtEnd() const { return (current >= source.length()); }
+bool Tokenizer2::isAtEnd() const { return (current_ >= source_.length()); }
 
-char Tokenizer2::advance() { return source.at(current++); }
+char Tokenizer2::advance() { return source_.at(current_++); }
 
 char Tokenizer2::peek() const {
   if (isAtEnd()) return 0;
-  return source.at(current);
+  return source_.at(current_);
 }
 
 void Tokenizer2::addToken(const TokenType type,
                           const std::string_view content = "") {
-  tokens.push_back(
-      {.type = type, .content = std::string(content), .line = line});
+  tokens_.push_back(
+      {.type = type, .content = std::string(content), .line = line_});
 }
 
 bool Tokenizer2::match(const char expected) {
   if (isAtEnd() || (peek() != expected)) return false;
-  current++;
+  current_++;
   return true;
 }
 
 void Tokenizer2::content() {
-  addToken(TokenType::kContent, source.substr(start));
+  addToken(TokenType::kContent, source_.substr(start_));
   while (!isAtEnd()) {
-    if (peek() == '\n') line++;
+    if (peek() == '\n') line_++;
     advance();
   }
-  current = source.length();
+  current_ = source_.length();
 }
 
 void Tokenizer2::delimiter() {
@@ -49,38 +49,40 @@ void Tokenizer2::delimiter() {
   }
   if (peek() != '\n') {
     handleError(
-        line, "Lines containing delimiters cannot contain any other character");
+        line_,
+        "Lines containing delimiters cannot contain any other character");
   }
   addToken(TokenType::kFMDelimiter);
   // Consume new line.
   advance();
-  line++;
-  num_delimiters++;
-  if (num_delimiters == 2) {
-    start = current;
+  line_++;
+  num_delimiters_++;
+  if (num_delimiters_ == 2) {
+    start_ = current_;
     content();
   }
 }
 
 void Tokenizer2::quotedWord() {
   while (peek() != '"' && !isAtEnd()) {
-    if (peek() == '\n') line++;
+    if (peek() == '\n') line_++;
     advance();
   }
   if (isAtEnd()) {
-    handleError(line, "Encountered end of file while parsing quoted word.");
+    handleError(line_, "Encountered end of file while parsing quoted word.");
   }
   // Need to consume the closing " as well.
   advance();
-  addToken(TokenType::kFMWord, source.substr(start + 1, current - start - 2));
+  addToken(TokenType::kFMWord,
+           source_.substr(start_ + 1, current_ - start_ - 2));
 }
 
 void Tokenizer2::word() {
   while (!isWordSeparator(peek()) && !isAtEnd()) {
-    if (peek() == '\n') line++;
+    if (peek() == '\n') line_++;
     advance();
   }
-  addToken(TokenType::kFMWord, source.substr(start, current - start));
+  addToken(TokenType::kFMWord, source_.substr(start_, current_ - start_));
 }
 
 void Tokenizer2::scanToken() {
@@ -100,7 +102,7 @@ void Tokenizer2::scanToken() {
       break;
     case '\n':
       addToken(TokenType::kNewLine);
-      line++;
+      line_++;
       break;
     case '"':
       quotedWord();
@@ -119,12 +121,12 @@ void Tokenizer2::scanToken() {
 
 TokenList Tokenizer2::Tokenize() {
   while (!isAtEnd()) {
-    start = current;
+    start_ = current_;
     scanToken();
   }
 
   addToken(TokenType::kEof);
-  return tokens;
+  return tokens_;
 }
 
 }  // namespace yass

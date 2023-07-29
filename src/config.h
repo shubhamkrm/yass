@@ -1,5 +1,5 @@
 #ifndef CONFIG_H
-#define CONFIG_H 
+#define CONFIG_H
 
 #include <memory>
 #include <string>
@@ -7,20 +7,37 @@
 
 namespace yass {
 
+// Represents a navigation entry, consisting of a label and a URL. Multi-level
+// navigation is not supported yet.
 struct Navigation {
-    std::string label;
-    std::string url;
+  // Navigation item label, such as 'Home', 'About' etc.
+  std::string label;
+
+  // URL for navigation item. It can be absolute or relative.
+  std::string url;
 };
 
+// Maps values loaded from the top-level config.toml as a struct. This is used
+// to set site-wide variables. All these variables are transparently available
+// in the templates.
 struct SiteConfig {
-    std::string name;
-    std::string base_url;
-    std::string copyright_owner;
-    std::vector<Navigation> navigation;
-};
-    
-std::shared_ptr<SiteConfig> ReadConfig(std::string_view config_path); 
+  // Name of the website.
+  std::string name;
 
-} /* yass  */ 
+  // Base URL of the website. Relative URLs are converted to absolute using this
+  // value.
+  std::string base_url;
+
+  // Owner name used in the copyright notice.
+  std::string copyright_owner;
+
+  // Single level navigation items.
+  std::vector<Navigation> navigation;
+};
+
+// Reads top-level config.toml and returns a corresponding struct pointer.
+std::shared_ptr<SiteConfig> ReadConfig(std::string_view config_path);
+
+}  // namespace yass
 
 #endif /* ifndef CONFIG_H */
