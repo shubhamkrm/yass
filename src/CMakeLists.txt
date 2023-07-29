@@ -12,10 +12,9 @@ FetchContent_MakeAvailable(tomlplusplus)
 set(BUILD_SHARED_LIBS OFF)
 
 add_library(md4c-html vendor/md4c/entity.c vendor/md4c/md4c-html.c vendor/md4c/md4c.c)
-add_library(yasscpp atom.cc config.cc parser.cc processor.cc theme.cc
-    tokenizer.cc)
-target_link_libraries(yasscpp PUBLIC md4c-html tomlplusplus::tomlplusplus
-    ctemplate)
+add_library(yasscpp atom.cc config.cc fileutils.cc  parser.cc processor.cc
+    theme.cc tokenizer.cc)
+target_link_libraries(yasscpp PUBLIC md4c-html tomlplusplus::tomlplusplus)
 target_link_libraries(yass PUBLIC yasscpp)
 install(TARGETS yass)
 

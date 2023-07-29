@@ -1,5 +1,3 @@
-#include <ctemplate/template.h>
-
 #include <chrono>
 #include <ctime>
 #include <filesystem>
@@ -7,13 +5,15 @@
 #include <set>
 #include <string>
 
+#include "fileutils.h"
 #include "processor.h"
 #include "theme.h"
+#include "vendor/kainjow/Mustache/mustache.hpp"
 
 namespace yass {
 namespace fs = std::filesystem;
-
-using ctemplate::TemplateDictionary;
+using kainjow::mustache::data;
+using kainjow::mustache::mustache;
 
 Theme::Theme(std::string_view name, std::shared_ptr<SiteConfig> site_config)
     : name_(name), site_config_(site_config) {}
@@ -26,46 +26,46 @@ std::string Theme::Render(
     Page *page,
     const std::set<PostSummary, PostSummaryCmp> post_summaries) const {
   fs::path path = GetTemplatePath(page->type);
-  ctemplate::TemplateDictionary dict("page");
+  mustache tmpl(ReadFile(path));
+  data template_values;
+  template_values.set("sitename", site_config_->name);
+  template_values.set("copyright_owner", site_config_->copyright_owner);
 
-  dict.SetValue("sitename", site_config_->name);
-  dict.SetValue("copyright_owner", site_config_->copyright_owner);
+  data nav_values = data::type::list;
   for (auto &nav_entry : site_config_->navigation) {
-    TemplateDictionary *nav_dict = dict.AddSectionDictionary("nav");
-    nav_dict->SetValue("text", nav_entry.label);
-    nav_dict->SetValue("url", site_config_->base_url + nav_entry.url);
+    data nav_entry_value;
+    nav_entry_value.set("text", nav_entry.label);
+    nav_entry_value.set("url", site_config_->base_url + nav_entry.url);
+    nav_values.push_back(nav_entry_value);
   }
+  template_values.set("nav", nav_values);
 
   std::time_t current_time = std::time(0);
-  dict.SetValue("update_date", std::ctime(&current_time));
-  dict.SetValue("content", page->content);
-  dict.SetValue("url", site_config_->base_url + page->path.string());
+  template_values.set("update_date", std::ctime(&current_time));
+  template_values.set("content", page->content);
+  template_values.set("url", site_config_->base_url + page->path.string());
+  template_values.set("prev_url", site_config_->base_url + page->prev.path);
+  template_values.set("prev_label", page->prev.title);
+  template_values.set("next_url", site_config_->base_url + page->next.path);
+  template_values.set("next_label", page->next.title);
 
-  dict.SetValue("prev_url", site_config_->base_url + page->prev.path);
-  dict.SetValue("prev_label", page->prev.title);
-  if (!page->prev.path.empty() && !page->prev.title.empty()) {
-    dict.ShowSection("prev_post");
-  }
-  dict.SetValue("next_url", site_config_->base_url + page->next.path);
-  dict.SetValue("next_label", page->next.title);
-  if (!page->next.path.empty() && !page->next.title.empty()) {
-    dict.ShowSection("next_post");
-  }
   for (auto &entry : page->metadata) {
     if (entry.second.type() == typeid(std::string))
-      dict.SetValue(entry.first, std::any_cast<std::string>(entry.second));
+      template_values.set(entry.first,
+                          std::any_cast<std::string>(entry.second));
   }
+
+  data summaries_data = data::type::list;
   if (page->type == "index") {
     for (auto &summary : post_summaries) {
-      TemplateDictionary *posts_dict = dict.AddSectionDictionary("posts");
-      posts_dict->SetValue("date", summary.date);
-      posts_dict->SetValue("title", summary.title);
-      posts_dict->SetValue("url", site_config_->base_url + summary.path);
+      data summary_value;
+      summary_value.set("date", summary.date);
+      summary_value.set("title", summary.title);
+      summary_value.set("url", site_config_->base_url + summary.path);
+      summaries_data.push_back(summary_value);
     }
   }
-  std::string output;
-  ctemplate::ExpandTemplate(path.string(), ctemplate::STRIP_WHITESPACE, &dict,
-                            &output);
-  return output;
+  template_values.set("posts", summaries_data);
+  return tmpl.render(template_values);
 }
 }  // namespace yass

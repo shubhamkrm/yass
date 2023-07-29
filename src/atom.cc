@@ -1,5 +1,3 @@
-#include <ctemplate/template.h>
-
 #include <chrono>
 #include <ctime>
 #include <filesystem>
@@ -8,14 +6,11 @@
 #include <iostream>
 
 #include "atom.h"
-#include "ctemplate/template_enums.h"
+#include "vendor/kainjow/Mustache/mustache.hpp"
 
 namespace yass {
-
-using ctemplate::ExpandTemplate;
-;
-using ctemplate::StringToTemplateCache;
-using ctemplate::TemplateDictionary;
+using kainjow::mustache::data;
+using kainjow::mustache::mustache;
 
 constexpr char kTemplateString[] = R"atom(
 <?xml version="1.0" encoding="UTF-8"?>
@@ -35,7 +30,7 @@ constexpr char kTemplateString[] = R"atom(
 		<id>{{HTML_URL}}</id>
 		<published>{{PUBLISHED_TIME}}</published>
 		<updated>{{UPDATE_TIME}}</updated>
-		<content type="html"><![CDATA[{{CONTENT}}]]></content>
+		<content type="html"><![CDATA[{{{CONTENT}}}]]></content>
 	</entry>
 	{{/ENTRY}}
 </feed>
@@ -57,30 +52,31 @@ Atom::Atom(const SiteConfig &site_config)
       feed_url_(site_config.base_url + "feed.xml"),
       author_(site_config.copyright_owner),
       update_time_(std::time(0)),
-      entries_() {
-  StringToTemplateCache("atom", kTemplateString, ctemplate::STRIP_WHITESPACE);
-}
+      entries_() {}
 
 void Atom::AddEntry(const Entry &entry) { entries_.push_back(entry); }
 
 void Atom::Write(std::filesystem::path out_dir) {
-  TemplateDictionary dict("atom");
-  dict.SetValue("FEED_NAME", name_);
-  dict.SetValue("HOMEPAGE_URL", homepage_url_);
-  dict.SetValue("FEED_URL", feed_url_);
-  dict.SetValue("AUTHOR_NAME", author_);
-  dict.SetValue("LAST_UPDATE_TIME", GetTimeString(update_time_));
+  data atom;
+  atom.set("FEED_NAME", name_);
+  atom.set("HOMEPAGE_URL", homepage_url_);
+  atom.set("FEED_URL", feed_url_);
+  atom.set("AUTHOR_NAME", author_);
+  atom.set("LAST_UPDATE_TIME", GetTimeString(update_time_));
 
+  data entries = data::type::list;
   for (auto &entry : entries_) {
-    TemplateDictionary *entry_dict = dict.AddSectionDictionary("ENTRY");
-    entry_dict->SetValue("TITLE", entry.title);
-    entry_dict->SetValue("HTML_URL", homepage_url_ + entry.url);
-    entry_dict->SetValue("CONTENT", entry.content);
-    entry_dict->SetValue("PUBLISHED_TIME", GetTimeString(entry.published_time));
-    entry_dict->SetValue("UPDATE_TIME", GetTimeString(entry.update_time));
+    data entry_data;
+    entry_data.set("TITLE", entry.title);
+    entry_data.set("HTML_URL", homepage_url_ + entry.url);
+    entry_data.set("CONTENT", entry.content);
+    entry_data.set("PUBLISHED_TIME", GetTimeString(entry.published_time));
+    entry_data.set("UPDATE_TIME", GetTimeString(entry.update_time));
+    entries.push_back(entry_data);
   }
-  std::string output;
-  ExpandTemplate("atom", ctemplate::STRIP_WHITESPACE, &dict, &output);
+  atom.set("ENTRY", entries);
+
+  std::string output = mustache(kTemplateString).render(atom);
   std::ofstream out(out_dir / "feed.xml");
   out << output;
 }

@@ -7,6 +7,7 @@
 #include <string>
 #include <vector>
 
+#include "fileutils.h"
 #include "processor.h"
 
 namespace yass {
@@ -22,13 +23,6 @@ fs::path GetRelativePath(fs::path md_path) {
 
 fs::path GetHtmlPath(fs::path relative_path) {
   return relative_path.replace_extension("html");
-}
-
-std::string ReadFile(const fs::path path) {
-  std::ifstream in(path);
-  std::ostringstream sstr;
-  sstr << in.rdbuf();
-  return sstr.str();
 }
 
 void WriteFile(const fs::path path, const std::string &content) {
