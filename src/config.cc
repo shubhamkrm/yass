@@ -1,5 +1,6 @@
 #include <iostream>
 #include <memory>
+#include <string_view>
 
 #include "config.h"
 
@@ -7,19 +8,28 @@
 #include <toml++/toml.h>
 
 namespace yass {
+using ::toml::parse_result;
+
+namespace {
+void AssertStringConfigElement(const parse_result& config,
+                               std::string_view element) {
+  if (!config[element].is_string()) {
+    std::cerr << "`" << element << "` is not available. I will die now.\n";
+    exit(1);
+  }
+}
+}  // namespace
 std::shared_ptr<SiteConfig> ReadConfig(std::string_view config_path) {
   auto site_config = std::make_shared<SiteConfig>();
-  const auto config = toml::parse_file(config_path);
-  if (!config["site_name"].is_string()) {
-    std::cerr << "Site Name is not available. I will die now." << std::endl;
-    exit(1);
-  }
-  if (!config["base_url"].is_string()) {
-    std::cerr << "Base URL is not available. I will die now." << std::endl;
-    exit(1);
-  }
+  const parse_result config = toml::parse_file(config_path);
+  AssertStringConfigElement(config, "site_name");
+  AssertStringConfigElement(config, "base_url");
+  AssertStringConfigElement(config, "theme");
+
   site_config->name = config["site_name"].as_string()->value_or("");
   site_config->base_url = config["base_url"].as_string()->value_or("");
+  site_config->theme = config["theme"].as_string()->value_or("");
+
   std::string copyright_owner;
   if (!config["copyright_owner"].is_string()) {
     std::cerr << "Copyright Owner is not available." << std::endl;

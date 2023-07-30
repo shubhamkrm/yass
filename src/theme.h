@@ -35,7 +35,7 @@ class Theme {
 
  public:
   // Initialized a theme with the name and site config.
-  Theme(std::string_view name, std::shared_ptr<SiteConfig> site_config);
+  Theme(std::shared_ptr<SiteConfig> site_config);
 
   // Returns a template path for a given theme name. This assumes that the
   // convention of storing themes at `theme/<theme-name>/<page_type>.tmpl` is

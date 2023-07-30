@@ -42,8 +42,10 @@ std::unordered_map<std::string, data> AddPartials(std::string_view theme_name) {
 }
 }  // namespace
 
-Theme::Theme(std::string_view name, std::shared_ptr<SiteConfig> site_config)
-    : name_(name), site_config_(site_config), partials_(AddPartials(name)) {}
+Theme::Theme(std::shared_ptr<SiteConfig> site_config)
+    : name_(site_config->theme),
+      site_config_(site_config),
+      partials_(AddPartials(name_)) {}
 
 fs::path Theme::GetTemplatePath(const std::string page_type) const {
   return fs::path("themes") / fs::path(name_) / fs::path(page_type + ".tmpl");

@@ -1,5 +1,7 @@
 add_executable(yass yass_main.cc)
 
+set(FMT_INSTALL OFF)
+
 include(FetchContent)
 # TOML++
 FetchContent_Declare(

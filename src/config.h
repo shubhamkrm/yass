@@ -31,6 +31,9 @@ struct SiteConfig {
   // Owner name used in the copyright notice.
   std::string copyright_owner;
 
+  // Theme name. This should be already installed at <project_root>/themes.
+  std::string theme;
+
   // Single level navigation items.
   std::vector<Navigation> navigation;
 };
