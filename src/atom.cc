@@ -12,8 +12,8 @@ namespace yass {
 using kainjow::mustache::data;
 using kainjow::mustache::mustache;
 
-constexpr char kTemplateString[] = R"atom(
-<?xml version="1.0" encoding="UTF-8"?>
+constexpr char kTemplateString[] =
+    R"atom(<?xml version="1.0" encoding="UTF-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">
 	<title>{{FEED_NAME}}</title>
 	<id>{{HOMEPAGE_URL}}</id>
