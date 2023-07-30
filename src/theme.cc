@@ -4,6 +4,7 @@
 #include <iostream>
 #include <set>
 #include <string>
+#include <unordered_map>
 
 #include "fileutils.h"
 #include "processor.h"
@@ -15,8 +16,34 @@ namespace fs = std::filesystem;
 using kainjow::mustache::data;
 using kainjow::mustache::mustache;
 
+namespace {
+
+// Scans partials directory for files, and appends them to partials map.
+std::unordered_map<std::string, data> AddPartials(std::string_view theme_name) {
+  auto dir = fs::path("themes") / fs::path(theme_name) / fs::path("partials");
+  std::unordered_map<std::string, data> partials;
+  if (!fs::exists(dir) || !fs::is_directory(dir)) {
+    std::cerr << "Partials directory not found. Skipping.\n";
+    return partials;
+  }
+  for (const fs::directory_entry &entry : fs::directory_iterator(dir)) {
+    if (!entry.is_regular_file()) {
+      std::cerr << "Found non-regular file " << entry.path()
+                << " in partials directory. Skipping.\n";
+      continue;
+    }
+    std::string partial_name = entry.path().stem();
+    std::function partial_provider = [entry]() {
+      return ReadFile(entry.path());
+    };
+    partials[partial_name] = data{partial_provider};
+  }
+  return partials;
+}
+}  // namespace
+
 Theme::Theme(std::string_view name, std::shared_ptr<SiteConfig> site_config)
-    : name_(name), site_config_(site_config) {}
+    : name_(name), site_config_(site_config), partials_(AddPartials(name)) {}
 
 fs::path Theme::GetTemplatePath(const std::string page_type) const {
   return fs::path("themes") / fs::path(name_) / fs::path(page_type + ".tmpl");
@@ -66,6 +93,10 @@ std::string Theme::Render(
     }
   }
   template_values.set("posts", summaries_data);
+
+  for (auto &partial : partials_) {
+    template_values.set(partial.first, partial.second);
+  }
   return tmpl.render(template_values);
 }
 }  // namespace yass

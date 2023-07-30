@@ -128,8 +128,15 @@ void Processor::ProcessContent() {
   atom.Write(kOutDir);
 
   std::string theme_path = theme.GetTemplatePath("post").parent_path();
-  for (const fs::directory_entry &dir_entry :
-       fs::recursive_directory_iterator(theme_path)) {
+  for (auto i = fs::recursive_directory_iterator(theme_path);
+       i != fs::recursive_directory_iterator(); ++i) {
+    // Skip partials directory
+    if (i->path().filename() == "partials") {
+      i.disable_recursion_pending();
+      continue;
+    }
+
+    auto dir_entry = *i;
     fs::path relative_path = fs::relative(dir_entry, theme_path);
     if (dir_entry.is_directory()) {
       fs::create_directory(kOutDir / relative_path);
