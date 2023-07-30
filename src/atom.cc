@@ -1,7 +1,7 @@
 #include <chrono>
 #include <ctime>
 #include <filesystem>
-#include <format>
+#include "fmt/chrono.h"
 #include <fstream>
 #include <iostream>
 
@@ -40,7 +40,7 @@ constexpr char kDateFormat[] = "{0:%F}T{0:%T%Ez}";
 
 namespace {
 std::string GetTimeString(time_t &time) {
-  return std::format(kDateFormat,
+  return fmt::format(kDateFormat,
                      std::chrono::floor<std::chrono::seconds>(
                          std::chrono::system_clock::from_time_t(time)));
 }

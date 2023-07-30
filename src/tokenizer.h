@@ -53,9 +53,8 @@ struct Token {
   // debugging and for meaningful error messages.
   size_t line;
 
-  // Provides default implementation for the spaceship operator. We also get
-  // implementations for <=, ==, and >= for free.
-  auto operator<=>(const Token&) const = default;
+  // Provides default implementation for the equality operator.
+  bool operator==(const Token&) const = default;
 };
 
 // Implementation for << operator for token for printing. Can be used for

@@ -8,3 +8,12 @@ add_subdirectory(src)
 enable_testing()
 add_subdirectory(tst)
 
+# Packaging for end-users
+include(GNUInstallDirs)
+include(InstallRequiredSystemLibraries)
+set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_SOURCE_DIR}/LICENSE.md")
+set(CPACK_PACKAGE_VERSION_MAJOR "${yass_VERSION_MAJOR}")
+set(CPACK_PACKAGE_VERSION_MINOR "${yass_VERSION_MINOR}")
+set(CPACK_SOURCE_GENERATOR "TGZ")
+include(CPack)
+
